@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Socket.IO bro chat</title>
+    <style>
+      body { margin: 0; padding-bottom: 3rem; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+
+      #form { 
+        background: rgba(0, 0, 0, 0.15); 
+        padding: 0.25rem; 
+        position: fixed; 
+        bottom: 0; 
+        left: 0; 
+        right: 0; 
+        display: flex; 
+        height: 3rem; 
+        box-sizing: border-box; 
+        backdrop-filter: blur(10px); 
+        justify-content: center;
+      }
+      #input { border: none; padding: 0 1rem; flex-grow: 1; border-radius: 2rem; margin: 0.25rem; }
+      #input:focus { outline: none; }
+      #form > button { width: 100%; background: #333; border: none; padding: 0 1rem; margin: 0.25rem; border-radius: 3px; outline: none; color: #fff; }
+
+      #messages {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        width: 100%;
+        }
+
+      #order_container{
+        width: 100%;
+        height: 100%;
+        bottom: 0;
+        position: absolute;
+        justify-content: center;
+        background-color: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(10px); 
+        display: none;
+      }
+
+      #order_container.active{
+        display: block;
+      }
+
+      #order{
+        display: flex;
+        flex-direction: column;
+        width: 500px;
+        height: 600px;
+        background-color: silver;
+        margin: 5% auto 0 auto;
+      }
+
+      #order > button{
+        bottom: 0;
+        height: 10%;
+        width: calc(100% - 0.5rem);
+        background: #333; 
+        border: none; 
+        padding: 0 1rem; 
+        margin: 0.25rem; 
+        border-radius: 6px; 
+        outline: none; 
+        color: #fff;
+        cursor: pointer;
+      }
+
+      #paragraph{
+        width: calc(90% - 8px);
+        height: calc(25% - 8px);
+        margin: 5% 5% 0 5%;
+        border: 4px solid white;
+        border-radius: 10px;
+        background-color: transparent;
+      }
+
+      #paragraph > p{
+        width: 80%;
+        height: 30%;
+        margin: 0px 10% 0 10%;
+        font-size: 25px;
+        font-weight: bolder;
+        color: #000;
+      }
+
+      #paragraph > input{
+        border: none;
+        background-color: transparent;
+        border-bottom: 4px solid gray;
+        color: black;
+        font-size: 30px;
+        width: 80%;
+        height: 30%;
+        margin: 5% 10% 0 10%;
+        outline: 0;
+      }
+
+      #order > h1{
+        background-color: white;
+        height: 15%;
+        margin: 0;
+        text-align: center;
+        font-size: 50px;
+        padding-top: 5%;
+        box-shadow: 0 10px 10px gray;
+      }
+
+      #paragraph_container{
+        width: 100%;
+        height: 75%;
+      }
+
+      .item{
+        display: flex;
+        flex-direction: column;
+        border: 2px solid black;
+        border-radius: 6px;
+        margin: 5px;
+        padding: 5px;
+        width: 100%;
+        min-width: 100px;
+        max-width: 300px;
+      }
+
+    </style>
+  </head>
+  <body>
+    <div id="order_container">
+      <button id="close">Закрыть</button>
+      <form id="order">
+        <h1>Заказ</h1>
+        <div id="paragraph_container">
+          <div id="paragraph">
+            <p>От куда:</p>
+            <input id="departure" autocomplete="off"/>
+          </div>
+          <div id="paragraph">
+            <p>Куда:</p>
+            <input id="arrival" autocomplete="off"/>
+          </div>
+          <div id="paragraph"> 
+            <p>Дата:</p>
+            <input type="date" id="date" autocomplete="off"/>
+          </div>
+        </div>
+        <button>Заказать</button>
+      </form>
+    </div>
+
+    <div id="messages"></div>
+    <form id="form" action="">
+      <button id="openForm" style="cursor: pointer;" >Форма</button>
+    </form>
+    <script src="/socket.io/socket.io.js"></script>
+
+    <script>
+      let socket = io();
+
+      let messages = document.getElementById('messages');
+      let form = document.getElementById('form');
+      let us = document.getElementById("input");
+      const open = document.getElementById('openForm')
+      let orderForm = document.getElementById('order_container')
+      const close = document.getElementById('close');
+      let departure = document.getElementById('departure')
+      let arrival = document.getElementById('arrival')
+      let date = document.getElementById('date')
+
+      socket.emit('update')
+
+      orderForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        if (departure.value && arrival.value && date.value) {
+          socket.emit('chat message', departure.value, arrival.value, date.value);
+          departure.value = '';
+          arrival.value = '';
+        }
+      });
+
+      open.addEventListener('click', (e) => {
+        e.preventDefault()
+        orderForm.classList.add('active');
+      });
+
+      close.addEventListener('click',(e) => {
+        e.preventDefault()
+        orderForm.classList.remove('active');
+      });
+
+      console.log(socket)
+      socket.on('chat message', function(orders) {
+        console.log(orders);
+        while (messages.firstChild) {
+            messages.removeChild(messages.firstChild);
+        }
+        for(var i = 0; i < orders.length; i++){
+          let item = document.createElement('div');
+          item.className = "item"
+          item.innerHTML = `<p>departure: ${orders[i].departure}</p><p>arrival: ${orders[i].arrival}</p><p>date: ${orders[i].date}</p><p>id: ${orders[i].id}</p>`
+          messages.appendChild(item);
+          window.scrollTo(0, document.body.scrollHeight);
+        }
+      });
+
+    </script>
+  </body>
+</html>
+
+<!--netstat -aon|findstr "8081"!-->
+<!--taskkill /T /F /PID 9592!-->
